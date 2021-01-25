@@ -138,7 +138,7 @@ class User(db.Model):
         """
 
         hashed_pwd = bcrypt.generate_password_hash(password).decode('UTF-8')
-
+        
         user = User(
             username=username,
             email=email,
@@ -147,6 +147,8 @@ class User(db.Model):
         )
 
         db.session.add(user)
+        # AB addition
+        db.session.commit()
         return user
 
     @classmethod
