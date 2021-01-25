@@ -1,5 +1,8 @@
+# for setting environment variables (when deploying to Heroku or testing)
 import os
 
+# A common use for g is to manage resources during a request.
+# Rather than passing the application around to each function, the current_app and g proxies are accessed instead.
 from flask import Flask, render_template, request, flash, redirect, session, g
 from flask_debugtoolbar import DebugToolbarExtension
 from sqlalchemy.exc import IntegrityError
@@ -11,14 +14,14 @@ CURR_USER_KEY = "curr_user"
 
 app = Flask(__name__)
 
-# Get DB_URI from environ variable (useful for production/testing) or,
+# Get DB_URI from environ variable (useful for production/testing) or,  
 # if not set there, use development local db.
 app.config['SQLALCHEMY_DATABASE_URI'] = (
     os.environ.get('DATABASE_URL', 'postgres:///warbler'))
 
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['SQLALCHEMY_ECHO'] = False
-app.config['DEBUG_TB_INTERCEPT_REDIRECTS'] = True
+app.config['DEBUG_TB_INTERCEPT_REDIRECTS'] = False
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', "it's a secret")
 toolbar = DebugToolbarExtension(app)
 
@@ -73,8 +76,11 @@ def signup():
                 username=form.username.data,
                 password=form.password.data,
                 email=form.email.data,
+                ############ TODO  What is .arg? Shouldn't this be left off?
                 image_url=form.image_url.data or User.image_url.default.arg,
             )
+            ############ TODO
+            # db.session.add(user)
             db.session.commit()
 
         except IntegrityError:
@@ -113,7 +119,10 @@ def login():
 def logout():
     """Handle logout of user."""
 
-    # IMPLEMENT THIS
+    # AB implementation
+    flash(f"Goodbye, {g.user.username}!", "info")
+    do_logout()
+    return redirect("/")
 
 
 ##############################################################################
@@ -200,7 +209,10 @@ def stop_following(follow_id):
         flash("Access unauthorized.", "danger")
         return redirect("/")
 
-    followed_user = User.query.get(follow_id)
+    # added "_or_404()." Was "get()"
+    # Maybe a try/except instead
+    followed_user = User.query.get_or_404(follow_id)
+    # TODO I don't think .remove is a thing. I think we need .pop, .delete, or something else
     g.user.following.remove(followed_user)
     db.session.commit()
 
@@ -249,6 +261,10 @@ def messages_add():
     if form.validate_on_submit():
         msg = Message(text=form.text.data)
         g.user.messages.append(msg)
+        # TODO
+        # add this line?
+        # if I append to the global user, I still need to add to db, correct? Or does the g object have some magical power I'm not aware of?
+        # db.session.add(msg)
         db.session.commit()
 
         return redirect(f"/users/{g.user.id}")
