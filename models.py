@@ -147,8 +147,6 @@ class User(db.Model):
         )
 
         db.session.add(user)
-        # AB addition
-        db.session.commit()
         return user
 
     @classmethod
@@ -170,6 +168,11 @@ class User(db.Model):
                 return user
 
         return False
+    
+    @classmethod
+    def check_hashed_pw_match(cls, db_pw, form_pw):
+        is_authorized = bcrypt.check_password_hash(db_pw, form_pw)
+        return True if is_authorized else False
 
 
 class Message(db.Model):

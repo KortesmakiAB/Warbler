@@ -7,7 +7,7 @@ from flask import Flask, render_template, request, flash, redirect, session, g
 from flask_debugtoolbar import DebugToolbarExtension
 from sqlalchemy.exc import IntegrityError
 
-from forms import UserAddForm, LoginForm, MessageForm
+from forms import UserAddForm, LoginForm, MessageForm, UserEditForm
 from models import db, connect_db, User, Message
 
 CURR_USER_KEY = "curr_user"
@@ -79,12 +79,11 @@ def signup():
                 ############ TODO  What is .arg? Shouldn't this be left off?
                 image_url=form.image_url.data or User.image_url.default.arg,
             )
-            ############ TODO
-            # db.session.add(user)
+
             db.session.commit()
 
         except IntegrityError:
-            flash("Username already taken", 'danger')
+            flash("Username/Email already taken", 'danger')
             return render_template('users/signup.html', form=form)
 
         do_login(user)
@@ -223,7 +222,36 @@ def stop_following(follow_id):
 def profile():
     """Update profile for current user."""
 
-    # IMPLEMENT THIS
+    if not g.user:
+        flash("Access unauthorized.", "danger")
+        return redirect("/")
+
+    form = UserEditForm(obj=g.user)
+
+    if form.validate_on_submit():
+        user = User.check_hashed_pw_match(g.user.password, 
+                                        form.password.data)
+        if not user:
+            flash("Invalid username/password.", "danger")
+            return render_template('users/edit.html', form=form)
+
+        g.user.username=form.username.data
+        g.user.email=form.email.data
+        g.user.image_url=form.image_url.data or User.image_url.default.arg
+        g.user.header_image_url=form.header_image_url.data
+        g.user.bio=form.bio.data
+        
+        try:
+            db.session.commit()
+        
+        except IntegrityError:
+            db.session.rollback()
+            flash("Username/Email already taken", 'danger')
+            return render_template('users/edit.html', form=form)
+        
+        return redirect(f"/users/{g.user.id}")
+    
+    return render_template("/users/edit.html", form=form)    
 
 
 @app.route('/users/delete', methods=["POST"])

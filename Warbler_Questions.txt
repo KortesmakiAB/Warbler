@@ -1,0 +1,6 @@
+def profile()
+Why is it that "form = UserEditForm(obj=g.user)" (from forms.py) does not add the current password to the form?
+Is this a security risk?
+
+What is user "location" for if we never use it?
+    Should I allow it to be an option in "edit" profile()?
