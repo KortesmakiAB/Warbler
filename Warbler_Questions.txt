@@ -4,3 +4,5 @@ Is this a security risk?
 
 What is user "location" for if we never use it?
     Should I allow it to be an option in "edit" profile()?
+
+No link to '/users'
