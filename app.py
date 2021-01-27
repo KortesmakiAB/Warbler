@@ -8,7 +8,7 @@ from flask_debugtoolbar import DebugToolbarExtension
 from sqlalchemy.exc import IntegrityError
 
 from forms import UserAddForm, LoginForm, MessageForm, UserEditForm
-from models import db, connect_db, User, Message
+from models import db, connect_db, User, Message, Likes
 
 CURR_USER_KEY = "curr_user"
 
@@ -185,7 +185,7 @@ def users_followers(user_id):
     return render_template('users/followers.html', user=user)
 
 
-@app.route('/users/follow/<int:follow_id>', methods=['POST'])
+@app.route('/users/follow/<int:follow_id>', methods=["POST"])
 def add_follow(follow_id):
     """Add a follow for the currently-logged-in user."""
 
@@ -200,7 +200,7 @@ def add_follow(follow_id):
     return redirect(f"/users/{g.user.id}/following")
 
 
-@app.route('/users/stop-following/<int:follow_id>', methods=['POST'])
+@app.route('/users/stop-following/<int:follow_id>', methods=["POST"])
 def stop_following(follow_id):
     """Have currently-logged-in-user stop following this user."""
 
@@ -324,6 +324,32 @@ def messages_destroy(message_id):
 
 
 ##############################################################################
+# Likes routes
+@app.route('/users/add_like/<int:message_id>', methods=["POST"])
+def add_like(message_id):
+    """Add liked Warble to "likes" table"""
+
+    # Get the user_id from message_id
+    user = db.session.query(Message.user_id).filter(Message.id == message_id).first()
+
+    if user.user_id != g.user.id:
+        like = Likes(user_id=g.user.id, message_id=message_id)
+        
+        db.session.add(like)
+        db.session.commit()
+        # raise
+        return redirect("/")
+
+
+@app.route('/users/<int:user_id>/likes')
+def show_likes(user_id):
+    """Display liked warbles"""
+
+    user = User.query.get_or_404(user_id)
+
+    return render_template('likes/show.html', user=user)
+
+##############################################################################
 # Homepage and error pages
 
 
@@ -343,8 +369,10 @@ def homepage():
                     .order_by(Message.timestamp.desc())
                     .limit(100)
                     .all())
-   
-        return render_template('home.html', messages=messages)
+    
+        like_ids = [like.id for like in g.user.likes]
+        # raise
+        return render_template('home.html', messages=messages, like_ids=like_ids)
 
     else:
         return render_template('home-anon.html')

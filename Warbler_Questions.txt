@@ -6,3 +6,6 @@ What is user "location" for if we never use it?
     Should I allow it to be an option in "edit" profile()?
 
 No link to '/users'
+
+problems with "unfollow" on '/users/
+    does def stop_following() work?
