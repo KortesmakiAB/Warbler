@@ -325,21 +325,6 @@ def messages_destroy(message_id):
 
 ##############################################################################
 # Likes routes
-@app.route('/users/add_like/<int:message_id>', methods=["POST"])
-def add_like(message_id):
-    """Add liked Warble to "likes" table"""
-
-    # Get the user_id from message_id
-    user = db.session.query(Message.user_id).filter(Message.id == message_id).first()
-
-    if user.user_id != g.user.id:
-        like = Likes(user_id=g.user.id, message_id=message_id)
-        
-        db.session.add(like)
-        db.session.commit()
-        # raise
-        return redirect("/")
-
 
 @app.route('/users/<int:user_id>/likes')
 def show_likes(user_id):
@@ -348,6 +333,38 @@ def show_likes(user_id):
     user = User.query.get_or_404(user_id)
 
     return render_template('likes/show.html', user=user)
+
+
+# @app.route('/users/add_like/<int:message_id>', methods=["POST"])
+@app.route('/likes/<int:message_id>', methods=["POST"])
+def add_like(message_id):
+    """Add/Remove liked Warble to/from "likes" table"""
+
+    like_ids = [like.id for like in g.user.likes]
+
+    # Get the user_id from message_id
+    user = db.session.query(Message.user_id).filter(Message.id == message_id).first()
+
+    # un-like a warble
+    if message_id in like_ids:
+        like = Likes.query.filter_by(message_id=message_id, user_id=g.user.id).first()
+        db.session.delete(like)
+        db.session.commit()
+
+        return redirect("/")
+
+    # add a "like"
+    else:
+        # (a user may not "like" their own post)
+        if user.user_id != g.user.id:
+            like = Likes(user_id=g.user.id, message_id=message_id)
+            
+            db.session.add(like)
+            db.session.commit()
+    
+        return redirect("/")
+
+
 
 ##############################################################################
 # Homepage and error pages
