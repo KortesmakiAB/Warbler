@@ -1,6 +1,7 @@
 def profile()
-Why is it that "form = UserEditForm(obj=g.user)" (from forms.py) does not add the current password to the form?
+Q. Why is it that "form = UserEditForm(obj=g.user)" (from forms.py) does not add the current password to the form?
 Is this a security risk?
+A. check answer key
 
 What is user "location" for if we never use it?
     Should I allow it to be an option in "edit" profile()?
@@ -15,3 +16,23 @@ What is generator folder? How does it work?
 Look over HTML to see how it's organized.
 
 Search for TODO's
+
+TESTS:
+I did not write tests for "is_following" and "is_followed_by" from models.py because I'm not using those methods in this app.
+
+Do we ever test relationships/foreign keys?
+
+
+Differences between ValueError and exc.IntegrityError (test_user_model.py)
+    User.signup: 
+        Why is it that I could omit a non-nullable field (password) and get a ValueError,
+        but also omit a non-nullable field (username), which is also unique, and get an IntegrityError?
+
+    "def test_User_signup_invalid()":
+        After experimenting, I learned that if there is only 1 IntegrityError thrown in my "with block", then the whole test passes. 
+        Should I have written "def test_User_signup_invalid()" and "def test_Message_model_invalid_input()" (from test_message_model.py) as multiple/separate tests?
+        Or is there a way to change my "with block" so all tests must pass?
+        Or is it fine the way it is??
+         
+I did not test User model for non-nullable fields. Should I have written those tests?
+

@@ -1,11 +1,8 @@
-"""User model tests."""
-
 # run these tests:  python -m unittest test_user_model.py
-
 
 import os
 from unittest import TestCase
-
+from sqlalchemy import exc
 from models import db, User, Message, Follows
 
 # BEFORE we import our app, let's set an environmental variable
@@ -29,14 +26,14 @@ db.create_all()
 
 
 class UserModelTestCase(TestCase):
-    """Test views for messages."""
+    """Test User model."""
 
     def setUp(self):
         """Create test client, add sample data."""
 
         User.query.delete()
-        Message.query.delete()
-        Follows.query.delete()
+        # Message.query.delete()
+        # Follows.query.delete()
 
         self.client = app.test_client()
 
@@ -47,13 +44,13 @@ class UserModelTestCase(TestCase):
         db.session.commit()
 
         # from solution code
-        u = User.query.get(1111)    
+        u = User.query.get(user.id)    
 
         self.u = u
 
 
     def tearDown(self):
-        """Clean up any fowled transaction."""
+        """Clean up any fowled transactions."""
 
         db.session.rollback()
 
@@ -73,7 +70,7 @@ class UserModelTestCase(TestCase):
 
 
 ############################################################
-# User class-methods tests
+# User.signup class-method tests
 
     def test_User_signup_valid(self):
         """Does User.signup successfully create a new user given valid credentials? """
@@ -96,14 +93,37 @@ class UserModelTestCase(TestCase):
     def test_User_signup_invalid(self):
         """Does User.signup fail to create a new user if any of the validations (e.g. uniqueness, non-nullable fields) fail?"""
 
-        with self.assertRaises(TypeError):
-            # no username
-            u2 = User.signup(None, 'test2@test.com', 'test_pw2', None)
-            # not a unique email
-            u3 = User.signup('testuser3', 'test@test.com', 'test_pw3', None)
-            # no image_url
-            u4 = User.signup('testuser4', 'test4@test.com', 'test_pw4')
+        # not unique username
+        u1 = User.signup(self.u.username, 'test1@test.com', 'test_pw1', None)
+        # no username
+        u2 = User.signup(None, 'test2@test.com', 'test_pw2', None)
+        # not a unique email
+        u3 = User.signup('testuser3', self.u.email, 'test_pw3', None)
+        # no email
+        u4 = User.signup('testuser4', None, 'test_pw4', None)
+        
+        
+        # db.session.add() accepts 2 to 3 arguments
+        db.session.add(u1, u2)
+        db.session.add(u3, u4)
 
+        # with self.assertRaises(TypeError):
+        with self.assertRaises(exc.IntegrityError):
+            db.session.commit()
+
+    
+    def test_User_signup_missing_email(self):
+        """"Does User.signup fail to create a new user if any of the validations (e.g. uniqueness, non-nullable fields) fail?"""
+
+        with self.assertRaises(ValueError):
+            # missing password
+            User.signup('testuser5', 'test5@test.com', None, None)
+            # wrong img_url type
+            User.signup('testuser5', 'test5@test.com', 'test_pw6', 1)
+
+
+############################################################
+# User.authenticate class-method tests
 
     def test_User_authenticate_valid(self):
         """Does User.authenticate successfully return a user when given a valid username and password?"""
@@ -113,9 +133,45 @@ class UserModelTestCase(TestCase):
         self.assertEqual(u.username, 'testuser')
         self.assertEqual(u.email, 'test@test.com')
         self.assertIsNot(u.password, 'test_pw')
+        # Bcrypt strings should start with $2b$
+        self.assertTrue(u.password.startswith("$2b$"))
+    
+    
+    def test_User_authenticate_invalid_password(self):
+        """Does User.authenticate successfully return a user when given a valid username and password?"""
+
+        u = User.authenticate(self.u.username, 'Not_A_Great_PW')
+
+        self.assertFalse(u)
+    
+    
+    def test_User_authenticate_invalid_username(self):
+        """Does User.authenticate successfully return a user when given a valid username and password?"""
+
+        u = User.authenticate('not_real_username', 'HASHED_PASSWORD')
+
+        self.assertFalse(u)
     
 
-    def test_pw_match(self):
-        """Check to see if Users.check_hashed_pw_match retuns True """
+############################################################
+# User.check_hashed_pw_match class-method tests
 
-        self.assertEqual(User.check_hashed_pw_match(self.u.password, 'HASHED_PASSWORD'), True)
+    def test_pw_match_valid(self):
+        """Check to see if User.check_hashed_pw_match retuns True if valid pw. """
+
+        self.assertTrue(User.check_hashed_pw_match(self.u.password, 'HASHED_PASSWORD'))
+
+
+    def test_pw_match_invalid_password(self):
+        """Check to see if User.check_hashed_pw_match retuns True if invalid password. """
+
+        self.assertFalse(User.check_hashed_pw_match(self.u.password, 'Not_A_Great_PW'))
+    
+    
+    def test_pw_match_invalid_username(self):
+        """Check to see if User.check_hashed_pw_match retuns True if invalid username. """
+
+        with self.assertRaises(ValueError):
+            User.check_hashed_pw_match('not_real_username', 'HASHED_PASSWORD')
+
+
