@@ -171,7 +171,10 @@ class User(db.Model):
     
     @classmethod
     def check_hashed_pw_match(cls, db_pw, form_pw):
+        """Check to see if hashed pw in db is the same as the hashed version of the pw from user input."""
+        
         is_authorized = bcrypt.check_password_hash(db_pw, form_pw)
+
         return True if is_authorized else False
 
 

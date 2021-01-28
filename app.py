@@ -23,7 +23,7 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['SQLALCHEMY_ECHO'] = False
 app.config['DEBUG_TB_INTERCEPT_REDIRECTS'] = False
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', "it's a secret")
-toolbar = DebugToolbarExtension(app)
+# toolbar = DebugToolbarExtension(app)
 
 connect_db(app)
 
@@ -337,7 +337,7 @@ def show_likes(user_id):
 
 # @app.route('/users/add_like/<int:message_id>', methods=["POST"])
 @app.route('/likes/<int:message_id>', methods=["POST"])
-def add_like(message_id):
+def add_remove_like(message_id):
     """Add/Remove liked Warble to/from "likes" table"""
 
     like_ids = [like.id for like in g.user.likes]
@@ -365,7 +365,6 @@ def add_like(message_id):
         return redirect("/")
 
 
-
 ##############################################################################
 # Homepage and error pages
 
@@ -388,7 +387,7 @@ def homepage():
                     .all())
     
         like_ids = [like.id for like in g.user.likes]
-        # raise
+        
         return render_template('home.html', messages=messages, like_ids=like_ids)
 
     else:

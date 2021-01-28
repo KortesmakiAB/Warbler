@@ -9,3 +9,9 @@ No link to '/users'
 
 problems with "unfollow" on '/users/
     does def stop_following() work?
+
+What is generator folder? How does it work?
+
+Look over HTML to see how it's organized.
+
+Search for TODO's
