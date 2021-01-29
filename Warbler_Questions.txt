@@ -1,27 +1,23 @@
+#### ROUTES (app.py)
+
 def profile()
 Q. Why is it that "form = UserEditForm(obj=g.user)" (from forms.py) does not add the current password to the form?
+    Flask threw an UndefinedError if I left the password field off the form. 
 Is this a security risk?
-A. check answer key
 
-What is user "location" for if we never use it?
-    Should I allow it to be an option in "edit" profile()?
+def messages_add()
+This should not sucessfully create an instance? 3 other fields have nullable = False.
+    msg = Message(text=form.text.data)
+    Why is this working?
+Also: g.user.messages.append(msg). 
+    This is somehow bypassing the need for "db.session.add(msg)". Why?
+    Is the g object a part of the session? If so, then it gets folded into db.sesssion.commit()?
 
-No link to '/users'
 
-problems with "unfollow" on '/users/
-    does def stop_following() work?
-
-What is generator folder? How does it work?
-
-Look over HTML to see how it's organized.
-
-Search for TODO's
-
-TESTS:
+#### TESTS:
 I did not write tests for "is_following" and "is_followed_by" from models.py because I'm not using those methods in this app.
 
-Do we ever test relationships/foreign keys?
-
+Do we ever write tests to see if relationships/foreign keys are working?
 
 Differences between ValueError and exc.IntegrityError (test_user_model.py)
     User.signup: 
@@ -36,3 +32,14 @@ Differences between ValueError and exc.IntegrityError (test_user_model.py)
          
 I did not test User model for non-nullable fields. Should I have written those tests?
 
+These were suggested test ideas. I think my code prevents this from happening.
+But, I'm not sure how to test for this.
+    When you’re logged in, are you prohibiting from adding a message as another user?
+    When you’re logged in, are you prohibiting from deleting a message as another user?
+
+
+#### Models
+
+Why is it that a user must delete all messages before they can delete their user account?
+    I thought that if we used ondelete="cascade" behavior, then all messages/follows/likes, etc would also be deleted. 
+    All likes and follows appear to delete themselves, but there appears to be an issue specific to cascade deleting messages.

@@ -1,8 +1,7 @@
-"""Message View tests."""
+# import pdb
+# pdb.set_trace()
 
-# run these tests like:
-#
-#    FLASK_ENV=production python -m unittest test_message_views.py
+# run these tests:  FLASK_ENV=production python -m unittest test_message_views.py
 
 
 import os
@@ -51,8 +50,12 @@ class MessageViewTestCase(TestCase):
 
         db.session.commit()
 
+
+############################################################
+# Add and Delete Messages while logged-in tests
+
     def test_add_message(self):
-        """Can use add a message?"""
+        """When you’re logged in, can you add a message?"""
 
         # Since we need to change the session to mimic logging in,
         # we need to use the changing-session trick:
@@ -61,9 +64,6 @@ class MessageViewTestCase(TestCase):
             with c.session_transaction() as sess:
                 sess[CURR_USER_KEY] = self.testuser.id
 
-            # Now, that session setting is saved, so we can have
-            # the rest of ours test
-
             resp = c.post("/messages/new", data={"text": "Hello"})
 
             # Make sure it redirects
@@ -71,3 +71,75 @@ class MessageViewTestCase(TestCase):
 
             msg = Message.query.one()
             self.assertEqual(msg.text, "Hello")
+
+
+    def test_delete_message(self):
+        """When you’re logged in, can you delete a message?"""
+
+        with self.client as c:
+            with c.session_transaction() as sess:
+                sess[CURR_USER_KEY] = self.testuser.id
+
+            # create a new message which will be deleted, and get message id from db
+            c.post("/messages/new", data={"text": "Pls delete me!"})
+            
+            msg = db.session.query(Message).first()
+            
+            resp = c.post(f'/messages/{msg.id}/delete')
+
+            self.assertEqual(resp.status_code, 302)
+            self.assertIn(f'/users/{msg.user_id}', resp.location)
+
+            # msg is no longer in db
+            self.assertIsNone(Message.query.get(msg.id))
+            
+
+############################################################
+# Message Add/Delete protection if not logged in tests
+
+    def test_authorization_msg_add(self):
+        """When you’re logged out, are you prohibited from adding messages?"""
+
+        with self.client as c:
+            # unauthorized post results in a redirect
+            resp1 = c.post('/messages/new', data={"text": "Unathorized Add Attempt"})
+            self.assertEqual(resp1.status_code, 302)
+
+            # follow re-direct
+            resp2 = c.post('/messages/new', data={"text": "I'm not allowed to add a new message."}, follow_redirects=True)
+            html = resp2.get_data(as_text=True)
+
+            self.assertEqual(resp2.status_code, 200)
+            self.assertIn("Access unauthorized.", html)
+
+            # db is empty
+            empty_db = Message.query.all()
+            self.assertEqual(len(empty_db), 0)
+
+
+    def test_authorization_msg_delete(self):
+        """When you’re logged out, are you prohibited from deleting messages?"""
+
+        with self.client as c:
+            with c.session_transaction() as sess:
+                sess[CURR_USER_KEY] = self.testuser.id
+            
+            # add a new message as a logged-in user
+            resp1 = c.post('/messages/new', data={"text": "This message won't be deleted."})
+            
+            msg = db.session.query(Message).first()
+
+            # logout
+            with c.session_transaction() as sess:
+                del sess[CURR_USER_KEY]
+
+            # now, try to delete the above message.
+            resp2 = c.post(f'/messages/{msg.id}/delete', follow_redirects=True)
+            html = resp2.get_data(as_text=True)
+
+            self.assertEqual(resp2.status_code, 200)
+
+            # db still has 1 message
+            one_msg = Message.query.all()
+            self.assertEqual(len(one_msg), 1)
+            

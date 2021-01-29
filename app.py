@@ -119,8 +119,10 @@ def logout():
     """Handle logout of user."""
 
     # AB implementation
-    flash(f"Goodbye, {g.user.username}!", "info")
+    
     do_logout()
+
+    flash(f"Goodbye, {g.user.username}!", "info")
     return redirect("/")
 
 
@@ -208,10 +210,7 @@ def stop_following(follow_id):
         flash("Access unauthorized.", "danger")
         return redirect("/")
 
-    # added "_or_404()." Was "get()"
-    # Maybe a try/except instead
     followed_user = User.query.get_or_404(follow_id)
-    # TODO I don't think .remove is a thing. I think we need .pop, .delete, or something else
     g.user.following.remove(followed_user)
     db.session.commit()
 
@@ -240,6 +239,7 @@ def profile():
         g.user.image_url=form.image_url.data or User.image_url.default.arg
         g.user.header_image_url=form.header_image_url.data
         g.user.bio=form.bio.data
+        g.user.location=form.location.data
         
         try:
             db.session.commit()
@@ -287,12 +287,12 @@ def messages_add():
     form = MessageForm()
 
     if form.validate_on_submit():
-        msg = Message(text=form.text.data)
+        # the next line works, but it shouldn't due to nullable=False. Why?
+        # msg = Message(text=form.text.data)
+        
+        msg = Message(text=form.text.data, user_id=g.user.id)
         g.user.messages.append(msg)
-        # TODO
-        # add this line?
-        # if I append to the global user, I still need to add to db, correct? Or does the g object have some magical power I'm not aware of?
-        # db.session.add(msg)
+        
         db.session.commit()
 
         return redirect(f"/users/{g.user.id}")
@@ -317,8 +317,10 @@ def messages_destroy(message_id):
         return redirect("/")
 
     msg = Message.query.get(message_id)
-    db.session.delete(msg)
-    db.session.commit()
+    
+    if msg.user_id == g.user.id:
+        db.session.delete(msg)
+        db.session.commit()
 
     return redirect(f"/users/{g.user.id}")
 
