@@ -9,9 +9,12 @@ def messages_add()
 This should not sucessfully create an instance? 3 other fields have nullable = False.
     msg = Message(text=form.text.data)
     Why is this working?
+    A. drop and re-create the tables (try this first)
 Also: g.user.messages.append(msg). 
     This is somehow bypassing the need for "db.session.add(msg)". Why?
     Is the g object a part of the session? If so, then it gets folded into db.sesssion.commit()?
+    A. No, g object is not part of session. But session is already aware of g.user from app.py @app.before_request
+
 
 
 #### TESTS:
@@ -29,8 +32,10 @@ Differences between ValueError and exc.IntegrityError (test_user_model.py)
         Should I have written "def test_User_signup_invalid()" and "def test_Message_model_invalid_input()" (from test_message_model.py) as multiple/separate tests?
         Or is there a way to change my "with block" so all tests must pass?
         Or is it fine the way it is??
+        A. write separate commits
          
 I did not test User model for non-nullable fields. Should I have written those tests?
+A. Y
 
 These were suggested test ideas. I think my code prevents this from happening.
 But, I'm not sure how to test for this.

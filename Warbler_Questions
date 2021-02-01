@@ -1,0 +1,20 @@
+#### ROUTES (app.py)
+def messages_add()
+This should not sucessfully create an instance? 3 other fields have nullable = False.
+    msg = Message(text=form.text.data)
+    Why is this working?
+    I tried dropping all tables and re-creathing and it did not help.
+
+
+#### Models
+
+Why is it that a user must delete all messages before they can delete their user account?
+    I thought that if we used ondelete="cascade" behavior, then all messages/follows/likes, etc would also be deleted. 
+    All likes and follows appear to delete themselves, but there appears to be an issue specific to cascade deleting messages.
+
+
+#### Tests
+test.user.model.py  -  def test_User_signup_invalid(self):
+Why do I get 2 different errors for the same violation?
+    A non-unique username gives a IntegrityError
+    A non-unique email gives a InvalidRequestError

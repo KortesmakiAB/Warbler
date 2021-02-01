@@ -93,25 +93,35 @@ class UserModelTestCase(TestCase):
     def test_User_signup_invalid(self):
         """Does User.signup fail to create a new user if any of the validations (e.g. uniqueness, non-nullable fields) fail?"""
 
-        # not unique username
-        u1 = User.signup(self.u.username, 'test1@test.com', 'test_pw1', None)
-        # no username
-        u2 = User.signup(None, 'test2@test.com', 'test_pw2', None)
-        # not a unique email
-        u3 = User.signup('testuser3', self.u.email, 'test_pw3', None)
-        # no email
-        u4 = User.signup('testuser4', None, 'test_pw4', None)
-        
-        
-        # db.session.add() accepts 2 to 3 arguments
-        db.session.add(u1, u2)
-        db.session.add(u3, u4)
-
-        # with self.assertRaises(TypeError):
         with self.assertRaises(exc.IntegrityError):
+            # not unique username
+            u1 = User.signup(self.u.username, 'test1@test.com', 'test_pw1', None)
+            db.session.add(u1)
+
             db.session.commit()
 
-    
+        with self.assertRaises(exc.InvalidRequestError):
+            # no username
+            u2 = User.signup(None, 'test2@test.com', 'test_pw2', None)
+            db.session.add(u2)
+
+            db.session.commit()
+
+        with self.assertRaises(exc.InvalidRequestError):
+            # not a unique email
+            u3 = User.signup('testuser3', self.u.email, 'test_pw3', None)
+            db.session.add(u3)
+
+            db.session.commit()
+
+        with self.assertRaises(exc.InvalidRequestError):
+            # no email
+            u4 = User.signup('testuser4', None, 'test_pw4', None)
+            db.session.add(u4)
+
+            db.session.commit()
+        
+            
     def test_User_signup_missing_email(self):
         """"Does User.signup fail to create a new user if any of the validations (e.g. uniqueness, non-nullable fields) fail?"""
 
